@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D-Карта Колледжа — Интерактивная схема</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body>
+    <div class="app">
+        <button class="menu-backdrop" id="menuBackdrop"></button>
+
+        <!-- ЛЕВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <a href="#">🏫 Карта Колледжа</a>
+            </div>
+
+            <div class="panel-scroll">
+
+                <!-- ЭТАЖИ -->
+                <section class="panel-block">
+                    <h4>Этаж</h4>
+                    <div class="floor-buttons" id="floorButtons"></div>
+                </section>
+
+                <!-- ОТОБРАЖЕНИЕ -->
+                <section class="panel-block">
+                    <h4>Отображение</h4>
+                    <label class="toggle-row">
+                        <span>Внешние стены</span>
+                        <span class="switch"><input type="checkbox" id="toggleWalls" checked /><span
+                                class="slider"></span></span>
+                    </label>
+                    <label class="toggle-row">
+                        <span>Перегородки</span>
+                        <span class="switch"><input type="checkbox" id="togglePartitions" checked /><span
+                                class="slider"></span></span>
+                    </label>
+                    <label class="toggle-row">
+                        <span>Подписи комнат</span>
+                        <span class="switch"><input type="checkbox" id="toggleLabels" checked /><span
+                                class="slider"></span></span>
+                    </label>
+                    <label class="toggle-row">
+                        <span>Цвета расписания</span>
+                        <span class="switch"><input type="checkbox" id="toggleSchedule" checked /><span
+                                class="slider"></span></span>
+                    </label>
+                    <label class="toggle-row">
+                        <span>Неоновое свечение</span>
+                        <span class="switch"><input type="checkbox" id="toggleNeon" checked /><span
+                                class="slider"></span></span>
+                    </label>
+                </section>
+
+                <!-- ВИД + ЗУМ -->
+                <section class="panel-block">
+                    <h4>Ракурс</h4>
+                    <div class="view-buttons" id="viewButtons">
+                        <button data-view="top" class="active">Сверху</button>
+                        <button data-view="iso">Изометрия</button>
+                        <button data-view="free">Свободный</button>
+                    </div>
+                    <label class="toggle-row" style="margin-top:10px">
+                        <span>Инвертировать вращение</span>
+                        <span class="switch"><input type="checkbox" id="toggleInvert" /><span
+                                class="slider"></span></span>
+                    </label>
+
+                    <div class="zoom-row">
+                        <button class="icon-btn zoom-btn" id="zoomOut" title="Отдалить">−</button>
+                        <span class="zoom-label" id="zoomLabel">100%</span>
+                        <button class="icon-btn zoom-btn" id="zoomIn" title="Приблизить">+</button>
+                        <button class="icon-btn zoom-btn" id="zoomReset" title="Сброс вида">⟲</button>
+                    </div>
+
+                    <p class="hint always">⌨ WASD / стрелки — двигать · 🖱 колесо / щипок — масштаб · тяни мышью, чтобы
+                        двигать (в «Свободном» — вращать).</p>
+                    <p class="hint" id="viewHint" style="display:none">🖱 Зажми левую кнопку и тяни, чтобы вращать
+                        схему.</p>
+                </section>
+
+                <!-- ПОИСК -->
+                <section class="panel-block">
+                    <h4>Поиск аудитории</h4>
+                    <div class="search-row">
+                        <input type="text" id="searchInput" placeholder="Номер или название…" />
+                        <button class="btn small" id="searchBtn">🔍</button>
+                    </div>
+                </section>
+
+                <!-- ОБНОВЛЕНИЕ -->
+                <section class="panel-block">
+                    <button class="btn primary wide" id="refreshBtn">↻ Обновить статусы</button>
+                </section>
+
+                <!-- ЛЕГЕНДА -->
+                <section class="panel-block">
+                    <h4>Легенда</h4>
+                    <ul class="legend">
+                        <li><span class="dot free"></span> Свободно</li>
+                        <li><span class="dot busy"></span> Идёт пара</li>
+                        <li><span class="dot soon"></span> Скоро начнётся</li>
+                        <li><span class="dot closed"></span> Недоступно</li>
+                    </ul>
+                </section>
+            </div>
+        </aside>
+
+        <!-- ОСНОВНАЯ ОБЛАСТЬ -->
+        <div class="main">
+            <header class="topbar">
+                <button class="icon-btn menu-btn" id="burgerBtn" aria-label="Меню">☰</button>
+                <div class="topbar-title">
+                    <strong id="buildingName">Главный корпус</strong>
+                    <span class="muted" id="floorName">1 этаж</span>
+                </div>
+                <div class="topbar-actions">
+                    <span class="pill ok" id="clock">--:--:--</span>
+                </div>
+            </header>
+
+            <main class="map-area">
+                <div class="map-stage" id="mapStage">
+                    <div class="floor" id="floor"></div>
+                    <div class="labels-overlay" id="labelsOverlay"></div>
+                </div>
+            </main>
+        </div>
+
+        <!-- ИНФО-ПАНЕЛЬ -->
+        <aside class="info-panel" id="infoPanel">
+            <button class="icon-btn close-info" id="closeInfo">×</button>
+            <div id="infoBody"></div>
+        </aside>
+
+    </div>
+
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/scene.js"></script>
+    <script src="assets/js/controls.js"></script>
+    <script src="assets/js/ui.js"></script>
+</body>
+
+</html>
