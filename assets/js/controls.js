@@ -20,14 +20,30 @@ MAP.controls = {
     },
     syncUIFromState() {
         const f = MAP.state.flags;
-        const setChk = (id, v) => { const el = this.$(id); if (el) el.checked = v; };
-        setChk("toggleWalls", f.walls); setChk("togglePartitions", f.partitions);
-        setChk("toggleLabels", f.labels); setChk("toggleSchedule", f.schedule);
+
+        const setChk = (id, v) => {
+            const el = this.$(id);
+            if (el) el.checked = v;
+        };
+
+        setChk("toggleWalls", f.walls);
+        setChk("togglePartitions", f.partitions);
+        setChk("toggleLabels", f.labels);
+        setChk("toggleSchedule", f.schedule);
         setChk("toggleNeon", f.neon);
         setChk("toggleInvert", !!(MAP.drag && MAP.drag.invert));
+
         const vb = this.$("viewButtons");
-        if (vb) vb.querySelectorAll("button[data-view]").forEach(b =>
-            b.classList.toggle("active", b.dataset.view === MAP.state.view));
+        if (vb) {
+            vb.querySelectorAll("button[data-view]").forEach(b =>
+                b.classList.toggle("active", b.dataset.view === MAP.state.view)
+            );
+        }
+
+        const slider = this.$("zoomSlider");
+        if (slider && MAP.viewport) {
+            slider.value = String(Math.round(MAP.viewport.zoom * 100));
+        }
     },
 
     bind() {
@@ -92,10 +108,27 @@ MAP.controls = {
     },
 
     bindZoom() {
-        const inBtn = this.$("zoomIn"), outBtn = this.$("zoomOut"), rst = this.$("zoomReset");
-        if (inBtn) inBtn.addEventListener("click", () => MAP.viewport.zoomAt(MAP.viewport.zoom * 1.25));
-        if (outBtn) outBtn.addEventListener("click", () => MAP.viewport.zoomAt(MAP.viewport.zoom / 1.25));
-        if (rst) rst.addEventListener("click", () => MAP.viewport.reset());
+        const click = (id, fn) => {
+            const el = this.$(id);
+            if (el) el.addEventListener("click", fn);
+        };
+
+        click("zoomIn", () => MAP.viewport.zoomAt(MAP.viewport.zoom * 1.25));
+        click("zoomOut", () => MAP.viewport.zoomAt(MAP.viewport.zoom / 1.25));
+        click("zoomReset", () => MAP.viewport.reset());
+
+        click("zoomInMobile", () => MAP.viewport.zoomAt(MAP.viewport.zoom * 1.25));
+        click("zoomOutMobile", () => MAP.viewport.zoomAt(MAP.viewport.zoom / 1.25));
+
+        const slider = this.$("zoomSlider");
+
+        if (slider) {
+            slider.addEventListener("input", () => {
+                const z = Number(slider.value) / 100;
+                const clamped = Math.max(MAP.viewport.MIN, Math.min(MAP.viewport.MAX, z));
+                MAP.viewport.zoomAt(clamped);
+            });
+        }
     },
 
     bindInvert() {

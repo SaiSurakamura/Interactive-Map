@@ -101,10 +101,16 @@ MAP.scene = {
 
     applyView(mode) {
         MAP.state.view = mode;
-        if (mode === "free") { MAP.drag.rotX = 55; MAP.drag.rotZ = -32; }
+
+        if (mode === "free") {
+            MAP.drag.rotX = 55;
+            MAP.drag.rotZ = -32;
+        }
+
         const hint = document.getElementById("viewHint");
         if (hint) hint.style.display = (mode === "free") ? "block" : "none";
-        MAP.viewport.applyNow();
+
+        MAP.viewport.recomputeBase();
     },
 
     highlightRoom(id) {
@@ -159,6 +165,10 @@ MAP.viewport = {
     PAD: 0.74, base: 1, zoom: 1, tx: 0, ty: 0, MIN: 0.5, MAX: 5, keys: new Set(), raf: 0, moved: false,
     _pending: false, _raf: 0,
 
+    getPad() {
+        return MAP.state.view === "top" ? 0.82 : 0.58;
+    },
+
     apply() {                       // планировщик: не чаще одного раза за кадр
         this._pending = true;
         if (this._raf) return;
@@ -169,13 +179,35 @@ MAP.viewport = {
     },
 
     applyNow() {
-        const s = this.base * this.zoom; let rx = 0, rz = 0;
-        if (MAP.state.view === "iso") { rx = 55; rz = -32; }
-        if (MAP.state.view === "free") { rx = MAP.drag.rotX; rz = MAP.drag.rotZ; }
-        const el = MAP.scene.floorEl; if (!el) return;
+        const s = this.base * this.zoom;
+        let rx = 0, rz = 0;
+
+        if (MAP.state.view === "iso") {
+            rx = 55;
+            rz = -32;
+        }
+
+        if (MAP.state.view === "free") {
+            rx = MAP.drag.rotX;
+            rz = MAP.drag.rotZ;
+        }
+
+        const el = MAP.scene.floorEl;
+        if (!el) return;
+
         el.style.transform = `translate(${this.tx}px, ${this.ty}px) scale(${s}) rotateX(${rx}deg) rotateZ(${rz}deg)`;
-        MAP.labels.update();          // контр-поворот НЕ нужен: оверлей экранно-горизонтален
-        const lbl = document.getElementById("zoomLabel"); if (lbl) lbl.textContent = Math.round(this.zoom * 100) + "%";
+
+        MAP.labels.update();
+
+        const pct = Math.round(this.zoom * 100);
+
+        const lbl = document.getElementById("zoomLabel");
+        if (lbl) lbl.textContent = pct + "%";
+
+        const slider = document.getElementById("zoomSlider");
+        if (slider && document.activeElement !== slider) {
+            slider.value = String(pct);
+        }
     },
 
     slack() {
@@ -192,8 +224,16 @@ MAP.viewport = {
     },
 
     recomputeBase() {
-        const st = MAP.scene.stageEl; if (!st) return; const g = MAP.DATA.geo;
-        this.base = Math.max(0.2, Math.min(st.clientWidth / g.FW, st.clientHeight / g.FH)) * this.PAD; this.applyCenter(); this.applyNow();
+        const st = MAP.scene.stageEl;
+        if (!st) return;
+
+        const g = MAP.DATA.geo;
+        const pad = this.getPad();
+
+        this.base = Math.max(0.2, Math.min(st.clientWidth / g.FW, st.clientHeight / g.FH)) * pad;
+
+        this.applyCenter();
+        this.applyNow();
     },
     reset() { this.zoom = 1; this.applyCenter(); this.applyNow(); },
     zoomAt(nz, qx = 0, qy = 0) {
@@ -210,8 +250,27 @@ MAP.viewport = {
 
     KEYMAP: { KeyW: [0, 1], ArrowUp: [0, 1], KeyS: [0, -1], ArrowDown: [0, -1], KeyA: [1, 0], ArrowLeft: [1, 0], KeyD: [-1, 0], ArrowRight: [-1, 0] },
     bindKeys() {
-        window.addEventListener("keydown", e => { const v = this.KEYMAP[e.code]; if (!v) return; e.preventDefault(); this.keys.add(e.code); this.startLoop(); });
-        window.addEventListener("keyup", e => { if (this.KEYMAP[e.code]) this.keys.delete(e.code); });
+        const isUiTarget = (el) => {
+            return !!el &&
+                typeof el.closest === "function" &&
+                el.closest('input, textarea, select, [contenteditable="true"]');
+        };
+
+        window.addEventListener("keydown", e => {
+            if (isUiTarget(e.target)) return;
+
+            const v = this.KEYMAP[e.code];
+            if (!v) return;
+
+            e.preventDefault();
+            this.keys.add(e.code);
+            this.startLoop();
+        });
+
+        window.addEventListener("keyup", e => {
+            if (this.KEYMAP[e.code]) this.keys.delete(e.code);
+        });
+
         window.addEventListener("blur", () => this.keys.clear());
     },
     startLoop() {
@@ -232,19 +291,42 @@ MAP.drag = {
 
     init() {
         const stage = document.getElementById("mapStage");
+        if (!stage) return;
+
         stage.addEventListener("mousedown", e => this.down(e.clientX, e.clientY, e.button));
         stage.addEventListener("contextmenu", e => e.preventDefault());
+
         stage.addEventListener("touchstart", e => {
-            if (e.touches.length === 2) this.pinchStart(e.touches[0], e.touches[1]);
-            else if (e.touches.length === 1) this.down(e.touches[0].clientX, e.touches[0].clientY, 0);
-        }, { passive: true });
+            if (e.touches.length === 2) {
+                if (e.cancelable) e.preventDefault();
+                this.pinchStart(e.touches[0], e.touches[1]);
+            } else if (e.touches.length === 1) {
+                this.down(e.touches[0].clientX, e.touches[0].clientY, 0);
+            }
+        }, { passive: false });
+
         window.addEventListener("mousemove", e => this.move(e.clientX, e.clientY));
+
         window.addEventListener("touchmove", e => {
-            if (this.mode === "pinch" && e.touches.length === 2) this.pinchMove(e.touches[0], e.touches[1]);
-            else if (e.touches.length === 1) this.move(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: true });
-        window.addEventListener("mouseup", () => this.up()); window.addEventListener("touchend", () => this.up()); window.addEventListener("touchcancel", () => this.up());
-        MAP.viewport.bindWheel(); MAP.viewport.bindKeys();
+            const onMap =
+                !!e.target &&
+                typeof e.target.closest === "function" &&
+                e.target.closest("#mapStage");
+
+            if (this.mode === "pinch" && e.touches.length === 2) {
+                if (onMap && e.cancelable) e.preventDefault();
+                this.pinchMove(e.touches[0], e.touches[1]);
+            } else if (e.touches.length === 1 && this.mode && onMap) {
+                this.move(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+
+        window.addEventListener("mouseup", () => this.up());
+        window.addEventListener("touchend", () => this.up());
+        window.addEventListener("touchcancel", () => this.up());
+
+        MAP.viewport.bindWheel();
+        MAP.viewport.bindKeys();
     },
 
     down(x, y, btn) {

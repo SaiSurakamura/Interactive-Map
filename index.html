@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>3D-Карта Колледжа — Интерактивная схема</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="assets/css/style.css" />
@@ -128,6 +128,24 @@
                 <div class="map-stage" id="mapStage">
                     <div class="floor" id="floor"></div>
                     <div class="labels-overlay" id="labelsOverlay"></div>
+                </div>
+
+                <div class="mobile-ui" id="mobileUI">
+                    <div class="mobile-hint">
+                        Приближайте и отдаляйте карту только внутри схемы. Если начать жест за пределами карты, телефон
+                        может масштабировать всю страницу.
+                    </div>
+
+                    <div class="mobile-zoom" role="group" aria-label="Масштаб карты">
+                        <button type="button" class="icon-btn" id="zoomOutMobile" title="Отдалить"
+                            aria-label="Отдалить">−</button>
+
+                        <input id="zoomSlider" type="range" min="50" max="500" step="1" value="100"
+                            aria-label="Ползунок масштаба карты" />
+
+                        <button type="button" class="icon-btn" id="zoomInMobile" title="Приблизить"
+                            aria-label="Приблизить">+</button>
+                    </div>
                 </div>
             </main>
         </div>
